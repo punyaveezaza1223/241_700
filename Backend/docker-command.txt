@@ -1,0 +1,9 @@
+docker ps --all  ดูimgeทั้งหมด
+
+docker run -d -p 9100:80 nginx 
+
+docker start f0bdf61ab04b runimage
+
+docker create nginx  สร้างimage
+
+docker stop 90de0e50749c หยุดimage
