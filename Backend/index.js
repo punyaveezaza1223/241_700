@@ -36,34 +36,34 @@ app.post('/user',(req,res) => {
     user: user
     });
 });
-//path: = POST /user/:id
-app.patch('/user/:id',(req,res) => {
-     let id = req.params.id;
-     let updateUser = req.body;
+// path: = PUT /user/:id
+app.patch('/user/:id', (req, res) => {
+    let id = req.params.id;
+    let updateUser = req.body;
+    
+    // หา user ที่จาก id ที่ส่งมา
+    let selectedIndex = users.findIndex(user => user.id == id);
 
-    //หา user ที่จาก id ที่ส่งมา
-    let selectedIndex = users.findIndex(user => user.id == id );
-    //อัพเดตข้อมูล users
-    users[selectedIndex].firstname = updateUser.firstname || users[selectedIndex].firstname;
-    users[selectedIndex].lastname = updateUser.lastname || users[selectedIndex].lastname;
+    if (selectedIndex === -1) {
+        return res.status(404).json({
+            message: "User not found"
+        });
+    }
 
-    if (updateUser.firstname){
+    if (updateUser.firstname) {
         users[selectedIndex].firstname = updateUser.firstname;
     }
-    if (updateUser.firstname){
+
+    if (updateUser.lastname) {
         users[selectedIndex].lastname = updateUser.lastname;
     }
 
     res.json({
-        message: 'user update successfully',
-        data: {
-            user: updateUser,
-            indexUpdate: selectedIndex
-        }
+        message: 'User updated successfully',
+        user: users[selectedIndex]
     });
-    //ส่ง users ที่อัพเดทแล้วกลับไป
-    
-}) 
+    // ส่ง users ที่อัพเดตแล้วกลับไป
+});
 
 app.delete('/user/:id',(req,res) => {
     let id = req.params.id;
