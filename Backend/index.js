@@ -1,41 +1,120 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const mysql = require('mysql2/promise');
 const app = express();
 
 app.use(bodyParser.json());
 
-const port = 8000;
+const port = 3000;
+
+
 
 let users =[];
 let counter = 1;
 
-/*
-GET /users - ดึงข้อมูลผู้ใช้ทั้งหมด
-POST /users - เพิ่มผู้ใช้ใหม่
-GET /users/:id - ดึงข้อมูลผู้ใช้ตาม ID
-PUT /user/:id - แก้ไขข้อมูลผู้ใช้ตาม ID ที่บันทึก
-DELETE /users/id: - ลบผุ้ใช้ตาม ID ที่บันทึก
- */
+let conn = null;
+const initMysql = async () => {
+    conn = await mysql.createConnection({
+        host: 'localhost',
+        user: 'root',
+        password: 'root',
+        database: 'webdb',
+        port: 8700
+    });
+    console.log('Connected to MySQL database');
+}
+
+app.get('/testdb-new', async (req, res) => { 
+
+    try{
+        const conn = await mysql.createConnection({
+            host: 'localhost',
+            user: 'root',
+            password: 'root',
+            database: 'webdb',
+            port: 8700
+        });
+        const result = await conn.execute('SELECT * FROM users');
+        res.json(result[0]);
+    } catch (error) {
+        console.error('Database connection failed:', error);
+        res.status(500).json({ error: 'Database connection failed' });
+    }
+});
 
 
 
 //path: = GET /users
-app.get('/users', (req, res) => {
-    res.json(users);
+app.get('/users', async (req,res) => {
+    const result = await conn.query('SELECT * FROM users');
+    res.json(result[0]);
 });
 
 //path: = POST /user
-app.post('/user',(req,res) => {
-    let user = req.body;
-    user.id = counter
-    counter += 1;
-
-    users.push(user);
-    res.json({
-    message: 'user added successfully',
-    user: user
-    });
+app.post('/users', async (req,res) => {
+    try{
+        let user = req.body;
+            const result = await conn.query('INSERT INTO users SET', user);
+            res.json({
+                message: 'User created successfully',
+                data: result[0]
+            });
+    } catch (error) { 
+        console.error('Error inserting user:', error);
+        res.status(500).json({ error: 'Failed to create user' });
+    }
 });
+
+
+app.get('/users/:id', async (req, res) => {
+    try {
+        let id = req.params.id;
+        const result = await conn.query('SELECT * FROM users WHERE id = ?', id);
+        if (result[0].length === 0) {
+            throw { statusCode:404 , message: 'User not found' };
+        }
+        res.json(result[0]);
+    } catch (error) {
+        console.error('Error fetching user:', error);
+        let statusCode = error.statusCode || 500;
+        res.status(statusCode).json({ 
+            message: error.message || 'Failed to fetch user'    
+         });
+    }
+
+})
+
+
+app.put('/users/:id', async (req, res) => { 
+    try {
+            let id = req.params.id;
+            let updateUser = req.body;
+            const result = await conn.query('UPDATE users SET ? WHERE id = ?', [updateUser, id]);
+            res.json({
+                message: 'User updated successfully',
+                data: result[0]
+            });
+    } catch (error) {
+        console.error('Error updating user:', error);
+        res.status(500).json({ error: 'Failed to update user' });
+    }
+ });
+
+app.delete('/users/:id', async (req, res) => {
+    try {
+        let id = req.params.id;
+        const result = await conn.query('DELETE FROM users WHERE id = ?', id);
+        res.json({
+            message: 'User deleted successfully',
+            data: result[0]
+        });
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        res.status(500).json({ error: 'Failed to delete user' });
+    }
+});
+
+
 // path: = PUT /user/:id
 app.patch('/user/:id', (req, res) => {
     let id = req.params.id;
@@ -79,6 +158,9 @@ app.delete('/user/:id',(req,res) => {
    });
 })
 
-app.listen(port, () => {
+app.listen(port, async () => {
+    await initMysql();
     console.log(`Server is running on http://localhost:${port}`);
 });
+
+
