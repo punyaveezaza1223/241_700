@@ -47,12 +47,12 @@ try{
     }
     console.log('submitData', userData);
     const errors = validateData(userData);
-    if (errors.length > 0) {
-        throw {
-            message: 'กรุณากรอกข้อมูลให้ครบถ้วน',
-            errors: errors
-        }
-    }
+    //if (errors.length > 0) {
+    //    throw {
+     //       message: 'กรุณากรอกข้อมูลให้ครบถ้วน',
+     //       errors: errors
+    //    }
+    //}
         const responese = await axios.post('http://localhost:3000/users', userData);
         console.log('response', responese);
         messageDom.innerText = "บันทึกสำเร็จ";
@@ -60,9 +60,13 @@ try{
     }catch(error){
         console.log('error message', error.message);
         console.log('error details', error.errors);
-      //  if (error.response) {
-      //      console.error('Error response:', error.responese.data.message);
-      //  }
+
+        if (error.response) {
+            console.log("error response: ", error.responese);
+            error.message = error.responese.data.message
+            error.errors = error.responese.data.errors
+        }
+        
         let htmlData = '<div>'
         htmlData += `<div>${error.message}</div>`;
         htmlData += '<ul>';

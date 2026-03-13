@@ -51,16 +51,48 @@ app.get('/users', async (req,res) => {
     res.json(result[0]);
 });
 
+const validateData = (userData) => {
+    let erroes = [];
+    if (!userData.firstName) {
+        erroes.push('กรุณากรอกชื่อ');
+    }
+    if (!userData.lastName) {
+        erroes.push('กรุณากรอกนามสกุล');
+    }
+    if (!userData.age) {
+        erroes.push('กรุณากรอกอายุ');
+    }
+    if (!userData.gender) {
+        erroes.push('กรุณากรอกเพศ');
+    }
+    if (!userData.interests) {
+        erroes.push('กรุณากรอกความสนใจ');
+    }
+    if (!userData.description) {
+        erroes.push('กรุณากรอกคำอธิบาย');
+    }
+    return erroes;
+}
+
 //path: = POST /user
 app.post('/users', async (req,res) => {
     try{
         let user = req.body;
+        const errors = validateData(user);
+        if (errors.length > 0 ) {
+            throw {
+                message:"กรุณากรอกให้ครบ",
+                errors: errors
+            }
+        }
             const result = await conn.query('INSERT INTO users SET ?', user);
             res.json({
                 message: 'User created successfully',
                 data: result[0]
             });
     } catch (error) { 
+        const errorMessage = error.message || "Error adding user" ;
+        const errors = error.errors || [];
         console.error('Error inserting user:', error);
         res.status(500).json({ error: 'Failed to create user' });
     }
@@ -76,10 +108,13 @@ app.get('/users/:id', async (req, res) => {
         }
         res.json(result[0]);
     } catch (error) {
+        const errorMessage = error.message || 'error adding user';
+        const errors = error.errors || [];
         console.error('Error fetching user:', error);
         let statusCode = error.statusCode || 500;
-        res.status(statusCode).json({ 
-            message: error.message || 'Failed to fetch user'    
+        res.status(500).json({ 
+            message: error.message ,
+            errors: errors
          });
     }
 
