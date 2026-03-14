@@ -1,3 +1,52 @@
+const BASE_URL = 'http://localhost:3000';
+
+let mode = 'create';
+let selectdId = '';
+
+window.onload = async () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get('id');
+    console.log('id', id);
+    if (id) {
+        mode = 'EDIT';
+        selectdId = id;
+
+        try{
+            const response = await axios.get(`${BASE_URL}/users/${id}`);
+            //console.log('response', response.data);
+            const user = response.data[0];
+            let firstNameDOM = document.querySelector('input[name=firstname]');
+            let lastNameDOM = document.querySelector('input[name=lastname]');
+            let ageDOM = document.querySelector('input[name=age]');
+            let descriptionDOM = document.querySelector('textarea[name=description]');
+            let messageDom = document.getElementById('message');
+
+            firstNameDOM.value = user.firstName;
+            lastNameDOM.value = user.lastName;
+            ageDOM.value = user.age;
+            descriptionDOM.value = user.description;
+
+            let genderDOMs = document.querySelectorAll('input[name=gender]');
+            let interestDOMs = document.querySelectorAll('input[name=interests]') ;
+            for (let i = 0; i < genderDOMs.length; i++){
+                if (genderDOMs[i].value == user.gender) {
+                    genderDOMs[i].checked = true;
+                }
+            }
+
+            for (let i = 0; i < interestDOMs.length; i++) {
+                if (user.interests.includes(interestDOMs[i].value)) {
+                    interestDOMs[i].checked = true;
+                }
+            }
+
+
+        } catch(error){
+            console.error("Error fetching user data:", error);
+        }
+
+    }
+}
 const validateData = (userData) => {
     let erroes = [];
     if (!userData.firstName) {
@@ -47,14 +96,31 @@ try{
     }
     console.log('submitData', userData);
     const errors = validateData(userData);
-    //if (errors.length > 0) {
-    //    throw {
-     //       message: 'กรุณากรอกข้อมูลให้ครบถ้วน',
-     //       errors: errors
-    //    }
-    //}
-        const responese = await axios.post('http://localhost:3000/users', userData);
-        console.log('response', responese);
+    if (errors.length > 0) {
+        throw {
+            message: 'กรุณากรอกข้อมูลให้ครบถ้วน',
+           errors: errors
+       }
+    }
+
+    let message = "บันทึกสำเร็จ";
+    if (mode == 'CREATE') {
+        const response = await axios.post(`${BASE_URL}/users`, userData);
+        const responseData = response.data;
+    } else {
+        const response = await axios.put(`${BASE_URL}/users/${selectdId}`, userData);
+        message = "แก้ไขสำเร็จ";
+        console.log('response', response.data);
+    }
+
+    messageDom.innerText = message;
+    messageDom.className = "message success";
+
+
+
+
+        const response = await axios.post(`${BASE_URL}/users`, userData);
+        console.log('response', response);
         messageDom.innerText = "บันทึกสำเร็จ";
         messageDom.className = "message success";
     }catch(error){
@@ -62,9 +128,9 @@ try{
         console.log('error details', error.errors);
 
         if (error.response) {
-            console.log("error response: ", error.responese);
-            error.message = error.responese.data.message
-            error.errors = error.responese.data.errors
+            console.log("error response: ", error.response);
+            error.message = error.response.data.message
+            error.errors = error.response.data.errors
         }
         
         let htmlData = '<div>'
